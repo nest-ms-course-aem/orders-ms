@@ -19,18 +19,28 @@ enum OrderStatus {
   CANCELLED
 }
 
-
- model Order {
-
-  id String @id @default(uuid())
+model Order {
+  id          String @id @default(uuid())
   totalAmount Float
-  totalItems Int
+  totalItems  Int
 
-  status OrderStatus
-  paid Boolean @default(false)
+  status OrderStatus @default(PENDING)
+  paid   Boolean     @default(false)
   paidAt DateTime? //nullable
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
- }
+  OrderItem OrderItem[]
+}
+
+// Create a new brand model that will have the logic of the oreders details
+model OrderItem {
+  id        String @id @default(uuid())
+  productId Int // must be a relations but remember they are in different tables if they were in the same we'd be able to use it the relations
+  quantity  Int
+  price     Float
+
+  Order   Order?  @relation(fields: [orderId], references: [id])
+  orderId String?
+}
