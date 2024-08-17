@@ -9,10 +9,13 @@ async function bootstrap() {
   const logger = new Logger('Main');
   const port = envs?.port;
 
+  console.log({nats: envs.natsServer});
+  
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-    transport: Transport.TCP,
+    transport: Transport.NATS,
     options: {
-      port
+      servers: envs.natsServer
     }
   });
 

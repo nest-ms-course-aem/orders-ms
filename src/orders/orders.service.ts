@@ -5,7 +5,7 @@ import { isNil } from 'lodash';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
-import { PRODUCTS_SERVICE } from 'src/config/envs/service';
+import { NATS_SERVICE, PRODUCTS_SERVICE } from 'src/config/envs/service';
 import { firstValueFrom } from 'rxjs';
 import { log } from 'console';
 
@@ -13,7 +13,7 @@ import { log } from 'console';
 export class OrdersService extends PrismaClient implements OnModuleInit {
 
   constructor(
-    @Inject(PRODUCTS_SERVICE) private readonly productsClient: ClientProxy
+    @Inject(NATS_SERVICE) private readonly natsClient: ClientProxy
   ) {
     super();
   }
@@ -32,7 +32,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       console.log({ productIds });
 
       //Confirm product ids
-      const products = await firstValueFrom(this.productsClient.send({ cmd: 'validateProducts' }, productIds));
+      const products = await firstValueFrom(this.natsClient.send({ cmd: 'validateProducts' }, productIds));
 
       //Measure values
 
@@ -143,7 +143,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     const orderItemProductIds = order?.OrderItem.map(item => item.productId);
     try {
 
-    const products = await firstValueFrom(this.productsClient.send({cmd: 'validateProducts'}, orderItemProductIds))
+    const products = await firstValueFrom(this.natsClient.send({cmd: 'validateProducts'}, orderItemProductIds))
       
     if (isNil(order)) {
       throw new RpcException({

@@ -6,20 +6,22 @@ import * as joi from 'joi'
 
 interface IEnvVars { 
     PORT: number;
-    PRODUCT_PORT: number;
-    PRODUCT_HOST: string;
+    NATS_SERVER: string;
+    // PRODUCT_PORT: number;
+    // PRODUCT_HOST: string;
 }
 
 // Schema validation
 const envsSchema = joi.object({
     PORT: joi.number().required(),
-    PRODUCT_PORT: joi.number().required(),
-    PRODUCT_HOST: joi.string().required(),
+    NATS_SERVERS: joi.array().items(joi.string()).required()
+    // PRODUCT_PORT: joi.number().required(),
+    // PRODUCT_HOST: joi.string().required(),
 })
 .unknown(true);
 
 // Error and value
-const {error, value} = envsSchema.validate(process.env);
+const {error, value} = envsSchema.validate({...process.env, NATS_SERVERS: process.env.NATS_SERVERS?.split(',') });
 
 if(error){
     throw new Error(`Env config validation error ${error?.message}`);
@@ -30,6 +32,7 @@ const envVars: IEnvVars = value;
 
 export const envs = {
     port: envVars?.PORT,
-    productPort: envVars?.PRODUCT_PORT,
-    productHost: envVars?.PRODUCT_HOST,
+    natsServer: envVars?.NATS_SERVER,
+    // productPort: envVars?.PRODUCT_PORT,
+    // productHost: envVars?.PRODUCT_HOST,
 }
