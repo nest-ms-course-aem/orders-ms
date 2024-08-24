@@ -6,7 +6,7 @@ import * as joi from 'joi'
 
 interface IEnvVars { 
     PORT: number;
-    NATS_SERVER: string;
+    NATS_SERVERS: string;
     // PRODUCT_PORT: number;
     // PRODUCT_HOST: string;
 }
@@ -32,7 +32,7 @@ const envVars: IEnvVars = value;
 
 export const envs = {
     port: envVars?.PORT,
-    natsServer: envVars?.NATS_SERVER,
+    natsServer: envVars?.NATS_SERVERS,
     // productPort: envVars?.PRODUCT_PORT,
     // productHost: envVars?.PRODUCT_HOST,
 }
