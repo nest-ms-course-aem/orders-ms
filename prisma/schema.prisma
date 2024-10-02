@@ -15,6 +15,7 @@ datasource db {
 
 enum OrderStatus {
   PENDING
+  PAID
   DELIVERED
   CANCELLED
 }
@@ -24,17 +25,19 @@ model Order {
   totalAmount Float
   totalItems  Int
 
-  status OrderStatus @default(PENDING)
-  paid   Boolean     @default(false)
-  paidAt DateTime? //nullable
+  status         OrderStatus @default(PENDING)
+  paid           Boolean     @default(false)
+  paidAt         DateTime? //nullable
+  stripeChargeId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  OrderItem OrderItem[]
+  OrderItem    OrderItem[]
+  OrderReceipt OrderReceipt?
 }
 
-// Create a new brand model that will have the logic of the oreders details
+// Create a new brand model(table) that will have the logic of the orders details
 model OrderItem {
   id        String @id @default(uuid())
   productId Int // must be a relations but remember they are in different tables if they were in the same we'd be able to use it the relations
@@ -43,4 +46,16 @@ model OrderItem {
 
   Order   Order?  @relation(fields: [orderId], references: [id])
   orderId String?
+}
+
+model OrderReceipt {
+  id String @id @default(uuid())
+
+  order Order @relation(fields: [orderId], references: [id])
+  orderId String @unique // formating auto generate the relation
+
+  receiptUrl String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
 }

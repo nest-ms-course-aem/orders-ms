@@ -1,6 +1,6 @@
 import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { PrismaClient } from '@prisma/client';
+import { OrderStatus, PrismaClient } from '@prisma/client';
 import { isNil } from 'lodash';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
@@ -8,6 +8,8 @@ import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { NATS_SERVICE, PRODUCTS_SERVICE } from 'src/config/envs/service';
 import { firstValueFrom } from 'rxjs';
 import { log } from 'console';
+import { OrderWithProducts } from './interfaces/order-with-products.interface';
+import { PaidOrderDto } from './dto/paid-order.dto';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -180,6 +182,48 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
         status
       }
     })
+  }
+
+  async createPaymentSession(orderWithProducts: OrderWithProducts){
+
+    const {OrderItem , id: orderId} = orderWithProducts;
+
+    const paymentSession =  await firstValueFrom(this.natsClient.send('create.payment.session', {
+        orderId,
+        currency: 'usd',
+        items: OrderItem.map(item => {
+          const {productId, ...rest} = item
+          return rest;
+        })
+      })
+    );
+
+    return paymentSession;
+  }
+
+  async paidOrder(paidOrderDto: PaidOrderDto){
+
+    this.logger.log('Order Paid');
+    this.logger.log({paidOrderDto});
+
+    const updatedOrder = await this.order.update({
+      where: {id: paidOrderDto.orderId},
+      data: {
+        status: OrderStatus.PAID,
+        paid: true,
+        paidAt: new Date(),
+        stripeChargeId: paidOrderDto.stripePaymentId,
+
+        // It's like a transaction, in case this execution fails then the updating processs will rollback
+        OrderReceipt: {
+          create: {
+            receiptUrl: paidOrderDto.receiptUrl,
+          }
+        }
+      }
+    });
+    
+    return updatedOrder;
   }
 
 }
